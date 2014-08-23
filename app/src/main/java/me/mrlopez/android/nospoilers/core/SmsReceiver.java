@@ -14,8 +14,10 @@ import android.support.v4.app.NotificationCompat;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import me.mrlopez.android.nospoilers.IndexActivity;
 import me.mrlopez.android.nospoilers.R;
@@ -27,12 +29,12 @@ public class SmsReceiver extends BroadcastReceiver {
 
     static {
         ClassLoader myClassLoader = SmsReceiver.class.getClassLoader();
-        Thread.currentThread().setContextClassLoader( myClassLoader );
+        Thread.currentThread().setContextClassLoader(myClassLoader);
     }
 
     @Override
-    public void onReceive( Context context , Intent intent ) {
-        if ( !intent.getAction().equals( "android.provider.Telephony.SMS_RECEIVED" ) ) {
+    public void onReceive(Context context, Intent intent) {
+        if (!intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")) {
             return;
         }
 
@@ -40,78 +42,83 @@ public class SmsReceiver extends BroadcastReceiver {
         SmsMessage[] messages = null;
 
         TelephonyManager mTelephonyMgr;
-        mTelephonyMgr = (TelephonyManager) context.getSystemService( Context.TELEPHONY_SERVICE );
-        String lineNumber = mTelephonyMgr.getLine1Number().replace( "-" , "" ).replace( "+" , "" );
+        mTelephonyMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        String lineNumber = mTelephonyMgr.getLine1Number().replace("-", "").replace("+", "");
 
 
-        if ( myBundle != null ) {
-            Object[] pdus = (Object[]) myBundle.get( "pdus" );
-            messages = new SmsMessage[ pdus.length ];
+        if (myBundle != null) {
+            Object[] pdus = (Object[]) myBundle.get("pdus");
+            messages = new SmsMessage[pdus.length];
 
-            for ( int i = 0; i < messages.length; i++ ) {
-                messages[ i ] = SmsMessage.createFromPdu( (byte[]) pdus[ i ] );
-                String from = messages[ i ].getOriginatingAddress().replace( "-" , "" ).replace( "+" , "" );
-                String message = messages[ i ].getMessageBody();
+            for (int i = 0; i < messages.length; i++) {
+                messages[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
+                String from = messages[i].getOriginatingAddress().replace("-", "").replace("+", "");
+                String message = messages[i].getMessageBody();
 
-                if(lineNumber.equals( from ) ) {
+                if (lineNumber.equals(from)) {
+                    // If we get message from self //
                     return;
                 }
 
-            }
-        }
+                Set<String> filters = Persistance.getFilters(context);
 
-    }
-
-    private void notifyBlocked( Context context , String head , String minor , String from, String formatBlocked ) {
-
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder( context ).setSmallIcon( R.drawable.ic_launcher ).setContentTitle( head ).setContentText( minor );
-
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra( "msg" , minor );
-        resultIntent.putExtra( "from" , from );
-        resultIntent.setComponent( new ComponentName( context , IndexActivity.class ) );
-        resultIntent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP );
-
-        PendingIntent intent = PendingIntent.getActivity( context , 0 , resultIntent , PendingIntent.FLAG_UPDATE_CURRENT );
-
-        mBuilder.setContentIntent( intent );
-        NotificationManager mNotificationManager = (NotificationManager) context.getSystemService( Context.NOTIFICATION_SERVICE );
-        mBuilder.setAutoCancel( true );
-
-        mNotificationManager.notify();
-    }
-
-    private void sendMessage( String number , String message ) {
-        SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage( number , null , message , null , null );
-    }
-
-    private ArrayList< String > getNumbers( Context c , String num1 ) {
-        Uri uri = Uri.withAppendedPath( ContactsContract.PhoneLookup.CONTENT_FILTER_URI , Uri.encode( num1 ) );
-        Cursor cursor = c.getContentResolver().query( uri , null , null , null , null );
-        ArrayList< String > mNumbers = new ArrayList< String >();
-        mNumbers.add( num1 );
-        while ( cursor.moveToNext() ) {
-            String contactId = cursor.getString( cursor.getColumnIndex( ContactsContract.Contacts._ID ) );
-            String hasPhone = cursor.getString( cursor.getColumnIndex( ContactsContract.Contacts.HAS_PHONE_NUMBER ) );
-            if ( hasPhone.equals( "1" ) ) {
-                // You know have the number so now query it like this
-                Cursor phones = c.getContentResolver().query( ContactsContract.CommonDataKinds.Phone.CONTENT_URI , null ,
-                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId , null , null );
-                while ( phones.moveToNext() ) {
-                    String number = phones.getString( phones.getColumnIndex( ContactsContract.CommonDataKinds.Phone.NUMBER ) );
-                    if ( !mNumbers.contains( number ) ) {
-                        mNumbers.add( number );
+                for (String filter : filters) {
+                    if (message.contains(filter)) {
+                        notifyBlocked(context, "No Spoiler", getContactName(context, from) + " has sent you a message!", from);
+                        // Persistance.updateMessages(from, message);
+                        this.setOrderedHint(true);
+                        this.abortBroadcast();
+                        break;
                     }
                 }
 
-                phones.close();
             }
-
         }
 
-        cursor.close();
-        return mNumbers;
+    }
 
+    private void notifyBlocked(Context context, String head, String minor, String from) {
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher).setContentTitle(head).setContentText(minor);
+
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("msg", minor);
+        resultIntent.putExtra("from", from);
+        resultIntent.setComponent(new ComponentName(context, IndexActivity.class));
+        resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        PendingIntent intent = PendingIntent.getActivity(context, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        mBuilder.setContentIntent(intent);
+        NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder.setAutoCancel(true);
+
+        mNotificationManager.notify(from.hashCode(), mBuilder.build());
+
+    }
+
+    private String getContactName(Context context, String number) {
+
+        String name = number;
+
+        String[] projection = new String[] {
+                ContactsContract.PhoneLookup.DISPLAY_NAME,
+                ContactsContract.PhoneLookup._ID};
+
+        Uri contactUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number));
+
+        Cursor cursor = context.getContentResolver().query(contactUri, projection, null, null, null);
+
+        if(cursor != null) {
+            if (cursor.moveToFirst()) {
+                name = cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
+                Log.v("NOSPOILER", "Contact Found @ " + number);
+                Log.v("NOSPOILER", "Contact name  = " + name);
+            } else {
+                Log.v("NOSPOILER", "Contact Not Found @ " + number);
+            }
+            cursor.close();
+        }
+        return name;
     }
 }
