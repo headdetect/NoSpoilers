@@ -28,8 +28,10 @@ import java.util.Set;
  */
 public class Persistance {
 
-    private static final String FILE = "filters";
+    private static final String FILE = "OPTS";
+
     private static final String FILTERS_KEY = "filtersSet";
+    private static final String IS_ON_KEY   = "IsOn";
 
     public static Set<String> getFilters(Context context) {
         try {
@@ -76,6 +78,31 @@ public class Persistance {
             editor.apply();
 
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean isOn(Context context) {
+        try {
+            boolean isOn = context.getSharedPreferences(FILE, 0).getBoolean(IS_ON_KEY, false);
+            return isOn;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static void setIsOn(Context context, boolean value) {
+        try {
+            SharedPreferences settings = context.getSharedPreferences(FILE, 0);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.clear();
+
+            editor.putBoolean(IS_ON_KEY, value);
+
+            // Commit the edits!
+            editor.apply();
         } catch (Exception e) {
             e.printStackTrace();
         }

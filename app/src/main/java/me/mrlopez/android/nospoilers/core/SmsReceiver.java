@@ -34,7 +34,7 @@ public class SmsReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")) {
+        if (!intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED") || !Persistance.isOn(context)) {
             return;
         }
 
@@ -78,7 +78,6 @@ public class SmsReceiver extends BroadcastReceiver {
     }
 
     private void notifyBlocked(Context context, String head, String minor, String from) {
-
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher).setContentTitle(head).setContentText(minor);
 
         Intent resultIntent = new Intent();
@@ -96,6 +95,8 @@ public class SmsReceiver extends BroadcastReceiver {
         mNotificationManager.notify(from.hashCode(), mBuilder.build());
 
     }
+
+
 
     private String getContactName(Context context, String number) {
 

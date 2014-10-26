@@ -58,24 +58,23 @@ public class IndexActivity extends Activity
             case 0:
                 mTitle = getString(R.string.title_section1);
                 fragmentManager.beginTransaction()
-                        .replace(R.id.container, new FiltersFragment())
+                        .replace(R.id.container, new PowerFragment())
                         .commit();
                 break;
             case 1:
+                mTitle = getString(R.string.title_section1);
+                fragmentManager.beginTransaction()
+                        .replace(R.id.container, new FiltersFragment())
+                        .commit();
+                break;
+            case 2:
                 mTitle = getString(R.string.title_section2);
                 fragmentManager.beginTransaction()
                         .replace(R.id.container, new MessagesFragment())
                         .commit();
                 break;
-            case 2:
-                showHelpDialog();
-                break;
         }
         restoreActionBar();
-    }
-
-    private void showHelpDialog() {
-
     }
 
     public void restoreActionBar() {

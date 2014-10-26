@@ -3,8 +3,11 @@ package me.mrlopez.android.nospoilers;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.provider.Telephony;
 import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -56,6 +59,19 @@ public class FiltersFragment extends Fragment {
         });
         reloadList();
 
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentapiVersion >= Build.VERSION_CODES.KITKAT) {
+            new AlertDialog.Builder(getActivity())
+                    .setTitle("Oops!")
+                    .setMessage("It seems you upgraded your phone. Unfortunately it does not work so well on this version. You may still use this app, but it will not block messages from coming in.")
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+
+                        }
+                    }).show();
+
+        }
+
         super.onStart();
     }
 
@@ -65,7 +81,7 @@ public class FiltersFragment extends Fragment {
         lstFilters = (ListView) getActivity().findViewById(R.id.lstFilters);
         lstFilters.setAdapter(new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, filters));
 
-        txtEmptyFiltersList.setVisibility( filters.size() <= 0 ? View.VISIBLE : View.GONE);
+        txtEmptyFiltersList.setVisibility(filters.size() <= 0 ? View.VISIBLE : View.GONE);
     }
 
 
@@ -142,11 +158,11 @@ public class FiltersFragment extends Fragment {
                         openCreateFilterDialog(filterIndex);
                     }
                 }).setNegativeButton("Delete", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        filtersList.remove(filterIndex);
-                        Persistance.setFilters(getActivity(), new HashSet<String>(filterIndex));
-                        reloadList();
-                    }
+            public void onClick(DialogInterface dialog, int whichButton) {
+                filtersList.remove(filterIndex);
+                Persistance.setFilters(getActivity(), new HashSet<String>(filterIndex));
+                reloadList();
+            }
         }).show();
     }
 }

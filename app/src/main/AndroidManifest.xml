@@ -9,9 +9,10 @@
 
     <application
         android:allowBackup="true"
+        android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|layoutDirection|fontScale"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|layoutDirection|fontScale" >
+        android:theme="@style/AppTheme" >
         <activity
             android:name=".IndexActivity"
             android:label="@string/app_name" >
@@ -20,10 +21,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
-        <receiver android:name="me.mrlopez.android.nospoilers.core.SmsReceiver" >
+        <receiver android:name=".core.SmsReceiver" >
             <intent-filter android:priority="9999999" >
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
@@ -32,6 +32,10 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" >
+        </activity>
+        <activity
+            android:name=".PowerActivity"
+            android:label="@string/title_activity_power" >
         </activity>
     </application>
 
